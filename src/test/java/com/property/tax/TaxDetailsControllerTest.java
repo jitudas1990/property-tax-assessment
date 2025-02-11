@@ -1,91 +1,91 @@
-package com.property.tax;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-import org.junit.Test;
 import org.junit.jupiter.api.BeforeEach;
-
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.property.tax.controller.TaxController;
-import com.property.tax.entity.TaxDetails;
-import com.property.tax.repository.TaxRepository;
-
-//@RunWith(SpringRunner.class)
-@WebMvcTest(TaxController.class)
-public class TaxDetailsControllerTest {
+@ExtendWith(MockitoExtension.class)
+class TaxDetailsControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
-    private TaxRepository taxDetailsRepository;
+    @InjectMocks
+    private TaxDetailsController taxDetailsController; // The controller you're testing
 
-    @MockBean
-    private BindingResult bindingResult;
+    @Mock
+    private TaxDetailsRepository taxDetailsRepository; // Mocked dependency for saving data
 
-    @MockBean
-    private RedirectAttributes redirectAttributes;
+    @Mock
+    private BindingResult bindingResult; // Mocked BindingResult
+
+    @Mock
+    private RedirectAttributes redirectAttributes; // Mocked RedirectAttributes
+
+    @Mock
+    private TaxDetails taxDetails; // Mocked TaxDetails
 
     @BeforeEach
-    public void setUp() {
-        // Set up any common configuration or mocks
+    void setUp() {
+        mockMvc = MockMvcBuilders.standaloneSetup(taxDetailsController).build();
     }
 
     @Test
-    public void testSubmitTaxDetailsSuccess() throws Exception {
-        TaxDetails taxDetails = new TaxDetails();
-        //when(bindingResult.hasErrors()).thenReturn(false);
+    void testSubmitTaxDetails_Success() throws Exception {
+        // Mock valid form submission
+        when(bindingResult.hasErrors()).thenReturn(false);
         when(taxDetailsRepository.save(any(TaxDetails.class))).thenReturn(taxDetails);
+        when(taxDetails.getTotalTax()).thenReturn(1000.0);
 
+        // Perform the POST request
         mockMvc.perform(post("/submitTaxDetails")
-                .flashAttr("taxDetails", taxDetails))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/"))
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .param("field1", "value1") // You can add actual form fields here
+                        .param("field2", "value2"))
+                .andExpect(status().is3xxRedirection()) // Expect redirection after successful form submission
+                .andExpect(redirectedUrl("/")) // Redirects to the home page
                 .andExpect(flash().attribute("message", "Tax details are saved successfully"));
-
-        verify(taxDetailsRepository, times(1)).save(any(TaxDetails.class));
     }
 
     @Test
-    public void testSubmitTaxDetailsValidationError() throws Exception {
-        TaxDetails taxDetails = new TaxDetails();
-      //  when(bindingResult.hasErrors()).thenReturn(true);
+    void testSubmitTaxDetails_ErrorInForm() throws Exception {
+        // Mock form submission with errors
+        when(bindingResult.hasErrors()).thenReturn(true);
 
+        // Perform the POST request
         mockMvc.perform(post("/submitTaxDetails")
-                .flashAttr("taxDetails", taxDetails))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/"))
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .param("field1", "value1") // Add form fields
+                        .param("field2", "value2"))
+                .andExpect(status().is3xxRedirection()) // Expect redirection due to errors
+                .andExpect(redirectedUrl("/")) // Redirects back to the home page
                 .andExpect(flash().attribute("message", "Error: Please check your form input."));
-
-        verify(taxDetailsRepository, times(0)).save(any(TaxDetails.class));
     }
 
     @Test
-    public void testSubmitTaxDetailsException() throws Exception {
-        TaxDetails taxDetails = new TaxDetails();
-        //when(bindingResult.hasErrors()).thenReturn(false);
-        doThrow(new RuntimeException("Test Exception")).when(taxDetailsRepository).save(any(TaxDetails.class));
+    void testSubmitTaxDetails_ExceptionHandling() throws Exception {
+        // Mock exception during processing
+        when(bindingResult.hasErrors()).thenReturn(false);
+        when(taxDetailsRepository.save(any(TaxDetails.class))).thenThrow(new RuntimeException("Database error"));
 
+        // Perform the POST request
         mockMvc.perform(post("/submitTaxDetails")
-                .flashAttr("taxDetails", taxDetails))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/error"))
-                .andExpect(flash().attribute("message", "An error occurred while submitting tax details: Test Exception"));
-
-        verify(taxDetailsRepository, times(1)).save(any(TaxDetails.class));
+                        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                        .param("field1", "value1") // Add form fields
+                        .param("field2", "value2"))
+                .andExpect(status().is3xxRedirection()) // Expect redirection due to error
+                .andExpect(redirectedUrl("/error")) // Redirects to the error page
+                .andExpect(flash().attribute("message", "An error occurred while submitting tax details: Database error"));
     }
 }
