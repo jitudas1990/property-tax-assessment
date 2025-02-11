@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Home</title>
+    <link rel="stylesheet" th:href="@{/styles.css}">
+</head>
+<body>
+    <h2>Property Tax Assessment</h2>
+    <ul>
+        <li><a th:href="@{/selfAssessmentForm}">Self-Assessment Form</a></li>
+        <li><a th:href="@{/zonalReport}">Zonal-wise report</a></li>
+    </ul>
+</body>
+</html>

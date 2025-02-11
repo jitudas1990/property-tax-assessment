@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Zonal-wise Report</title>
+    <link rel="stylesheet" th:href="@{/styles.css}">
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h2>Zonal-wise Report for Year 2014</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Zone Name</th>
+                <th>Property Type</th>
+                <th>Amount Collected</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="zone : ${#lists.newArrayList('Zone A', 'Zone B', 'Zone C')}">
+                <td th:rowspan="${#lists.size(zonalReport) == 2 ? 2 : 1}" th:text="${zone}"></td>
+                <tr th:each="report : ${zonalReport}" th:if="${report.zoneName == zone}">
+                    <td th:text="${report.propertyType}"></td>
+                    <td th:text="${report.amountCollected}"></td>
+                </tr>
+                <tr th:if="${#lists.size(zonalReport) == 1}">
+                    <td>Owner</td>
+                    <td>-</td>
+                </tr>
+                <tr th:if="${#lists.size(zonalReport) == 1}">
+                    <td>Tenanted</td>
+                    <td>-</td>
+                </tr>
+            </tr>
+        </tbody>
+    </table>
+</body>
+</html>
